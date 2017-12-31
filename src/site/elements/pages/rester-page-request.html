@@ -135,6 +135,12 @@
                             <paper-item role="menuitem" on-tap="_deleteRequest">Delete</paper-item>
                         </paper-listbox>
                     </paper-menu-button>
+                    <paper-menu-button id="moreOptions" horizontal-align="right" restore-focus-on-close>
+                        <paper-icon-button slot="dropdown-trigger" icon="more-vert"></paper-icon-button>
+                        <paper-listbox slot="dropdown-content" selectable="[role='menuitemradio']">
+                            <paper-item role="menuitem" on-tap="_generateCodeForRequest">Generate cURL command</paper-item>
+                        </paper-listbox>
+                    </paper-menu-button>
                 </app-toolbar>
             </app-header>
             <div role="main">
@@ -615,11 +621,7 @@
                     });
                 }
 
-                _sendRequest() {
-                    if (!this.$.requestForm.validate()) {
-                        return;
-                    }
-
+                _compileRequest() {
                     const usedVariableValues = {};
                     const compiledRequest = RESTer.variables.replace(this.request, this.requestVariableValues, usedVariableValues);
 
@@ -635,6 +637,25 @@
                     compiledRequest.tempVariables = {
                         values: RESTer.encode.mapFilesToVariableValues(this.$.bodyInput.files || {})
                     };
+
+                    return {
+                        compiledRequest,
+                        usedVariableValues
+                    };
+                }
+
+                _generateCodeForRequest() {
+                    this.$.moreOptions.close();
+                    const { compiledRequest } = this._compileRequest();
+                    RESTer.dialogs.generateCode.show(compiledRequest);
+                }
+
+                _sendRequest() {
+                    if (!this.$.requestForm.validate()) {
+                        return;
+                    }
+
+                    const { compiledRequest, usedVariableValues } = this._compileRequest();
 
                     if (window.AbortController) {
                         this._requestAbortController = new AbortController();
